@@ -15,6 +15,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1' #disable GPU
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  #suppress TF warnings
 print("Current working directory:", os.getcwd())
 
+nmaps = 100
 from astropy.io import fits
 def read_map(file_path):
     """
@@ -27,8 +28,7 @@ def read_map(file_path):
             print(hdul[1].columns)
         return np.concatenate(hdul[1].data['T'])
 
-
-def read_all_maps(path_lcdm, path_feature, n_maps=50):
+def read_all_maps(path_lcdm, path_feature, n_maps=nmaps):
     maps = []
     labels = []
     
@@ -55,11 +55,17 @@ map_temp_data = read_map(path_lcdm + 'cmb_map_0.fits')
 nside = nside = hp.npix2nside(len(map_temp_data))
 indices = np.arange(hp.nside2npix(nside))
 path_feature = "./simulated_maps/feature/"
-x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=36) #0: lcdm, 1:feature
+x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=nmaps) #0: lcdm, 1:feature
 
 from sklearn.model_selection import train_test_split
 x_train, x_test, y_train, y_test = train_test_split(x_raw, y_raw, test_size=0.3, random_state=42)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
+
+train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+train_dataset = train_dataset.shuffle(buffer_size=100).batch(16).prefetch(tf.data.AUTOTUNE)
+
+val_dataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
+val_dataset = val_dataset.batch(16)
 
 def objective(trial):
     tf.keras.backend.clear_session()
@@ -86,8 +92,8 @@ def objective(trial):
         Fout = max(2, Fout // 2)
 
     # Final conv and classification
-    layers.append(hp_layer.HealpyChebyshev(K=K, Fout=2))
-    layers.append(tf.keras.layers.Lambda(lambda x: tf.nn.softmax(tf.reduce_mean(x, axis=1), axis=-1)))
+    layers.append(hp_layer.HealpyChebyshev(K=K, Fout=1))
+    layers.append(tf.keras.layers.Lambda(lambda x: tf.math.sigmoid(tf.reduce_mean(x, axis=1))))
 
     # Build the model
     model = HealpyGCNN(nside=nside, indices=indices, layers=layers, n_neighbors=20)
@@ -96,19 +102,18 @@ def objective(trial):
     # Compile
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
+        loss='binary_crossentropy',
+        metrics=[tf.keras.metrics.BinaryAccuracy()]
     )
 
     # Train
     history = model.fit(
-        x_train, y_train,
-        batch_size=16,
-        epochs=50,
-        validation_data=(x_val, y_val),
+        train_dataset,
+        epochs=100,
+        validation_data=val_dataset,
         verbose=0,
         callbacks=[
-            tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True)
+            tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
         ]
     )
     print("model training finished")
@@ -124,13 +129,13 @@ print(f"  Accuracy: {trial.value}")
 print(f"  Params: {trial.params}")
 
 #Save top 10 trials
-top_trials = sorted(study.trials, key=lambda t: t.value if t.value is not None else -1, reverse=True)[:10]
+#top_trials = sorted(study.trials, key=lambda t: t.value if t.value is not None else -1, reverse=True)[:10]
 
-with open("optuna_top10_trials.txt", "w") as f:
-    for i, t in enumerate(top_trials):
-        f.write(f"Trial #{t.number}\n")
-        f.write(f"  Accuracy: {t.value:.4f}\n")
-        f.write("  Params:\n")
-        for key, value in t.params.items():
-            f.write(f"    {key}: {value}\n")
-        f.write("\n")
+#with open("optuna_top10_trials.txt", "w") as f:
+#    for i, t in enumerate(top_trials):
+#        f.write(f"Trial #{t.number}\n")
+#        f.write(f"  Accuracy: {t.value:.4f}\n")
+#        f.write("  Params:\n")
+#        for key, value in t.params.items():
+#            f.write(f"    {key}: {value}\n")
+#        f.write("\n")
