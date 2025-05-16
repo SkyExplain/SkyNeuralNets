@@ -117,7 +117,7 @@ def objective(trial):
         ]
     )
     print("model training finished")
-    val_acc = max(history.history['val_accuracy'])
+    val_acc = max(history.history['val_binary_accuracy'])
     return val_acc
 
 study = optuna.create_study(direction="maximize")
