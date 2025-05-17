@@ -89,11 +89,14 @@ train_dataset = train_dataset.shuffle(buffer_size=100).batch(16).prefetch(tf.dat
 val_dataset = tf.data.Dataset.from_tensor_slices((x_val, y_val))
 val_dataset = val_dataset.batch(16)
 
-model.compile(optimizer=tf.keras.optimizers.Adam(0.1),
-              loss='binary_crossentropy',
-              metrics=[tf.keras.metrics.BinaryAccuracy()])
+# Compile
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='binary_crossentropy',
+    metrics=[tf.keras.metrics.BinaryAccuracy()]
+)
 
-history = model.fit(train_dataset, validation_data=val_dataset, epochs=200)
+history = model.fit(train_dataset, validation_data=val_dataset, epochs=1000)
 
 # Function for the probability of classification as LCDM 
 def normFeat(p):
