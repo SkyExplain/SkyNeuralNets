@@ -1,14 +1,13 @@
-import tensorflow as tf
+
 import numpy as np
 import healpy as hp
 import os
 import matplotlib.pyplot as plt
-from deepsphere import HealpyGCNN, healpy_layers as hp_layer
-from deepsphere import utils
-from astropy.io import fits
-from sklearn.model_selection import train_test_split
 
-tf.keras.backend.clear_session()
+from astropy.io import fits
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["TF_NUM_INTRAOP_THREADS"] = "2"
+os.environ["TF_NUM_INTEROP_THREADS"] = "2"
 
 data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/CMBFeatureNet/data/"
 os.chdir(data_directory)
@@ -16,6 +15,12 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
 print("Current working directory:", os.getcwd())
 
+import tensorflow as tf
+from deepsphere import HealpyGCNN, healpy_layers as hp_layer
+from deepsphere import utils
+from sklearn.model_selection import train_test_split
+
+tf.keras.backend.clear_session()
 #Parameters from best trial
 num_blocks = 5
 K = 7
