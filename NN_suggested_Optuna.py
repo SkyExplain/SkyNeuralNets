@@ -96,7 +96,7 @@ x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=100)  # 0: lcdm, 1:
 x_train, x_test, y_train, y_test = train_test_split(x_raw, y_raw, test_size=0.3, random_state=42)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
 
-# Memory efficient data loading
+#Memory efficient data loading
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_dataset = train_dataset.shuffle(buffer_size=100).batch(16).prefetch(tf.data.AUTOTUNE)
 
