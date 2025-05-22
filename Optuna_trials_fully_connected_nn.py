@@ -71,7 +71,8 @@ print("Shape of maps_model:", maps_model.shape)
 X = (maps_model - np.mean(maps_model, axis=1, keepdims=True)) / np.std(maps_model, axis=1, keepdims=True)
 
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y_raw, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y_raw, test_size=0.3, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 #=== Define objective function for Optuna ===
 def objective(trial):
