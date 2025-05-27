@@ -99,7 +99,7 @@ def objective(trial):
     else:
         optimizer = tf.keras.optimizers.SGD(learning_rate)
 
-    model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=["accuracy"])
+    model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=[tf.keras.metrics.BinaryAccuracy()])
     model.summary(110)
 
     history = model.fit(
@@ -108,14 +108,15 @@ def objective(trial):
         epochs=100,
         batch_size=32,
         verbose=0,
-        callbacks=[tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3)]
+        callbacks=[tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)]
     )
 
-    val_pred = model.predict(X_val).ravel()
-    val_pred_label = (val_pred > 0.5).astype(np.int32)
-    acc = accuracy_score(y_val, val_pred_label)
-
-    return acc  #We want to maximize accuracy
+    #val_pred = model.predict(X_val).ravel()
+    #val_pred_label = (val_pred > 0.5).astype(np.int32)
+    #acc = accuracy_score(y_val, val_pred_label)
+    print("model training finished")
+    val_acc = max(history.history["val_binary_accuracy"])
+    return val_acc
 
 #=== Run optimization ===
 study = optuna.create_study(direction="maximize")
