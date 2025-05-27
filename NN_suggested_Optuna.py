@@ -109,7 +109,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(0.1),
 
 history = model.fit(train_dataset, validation_data=val_dataset, epochs=1000)
 
-# Function for the probability of classification as LCDM 
+#Probability of classification as LCDM 
 def normFeat(p):
     if 0 < p < 0.5:
         rr = 1 - p
@@ -117,7 +117,7 @@ def normFeat(p):
         rr = p
     return rr
 
-# Function for the probability of classification as Feature 
+#Probability of classification as Feature 
 def normLCDM(p):
     if 0 < p < 0.5:
         rr = p
@@ -162,7 +162,7 @@ plt.ylabel("Loss")
 plt.show()
 plt.savefig("./loss.png")
 
-# Performance: correct & incorrect predictions
+#Performance: correct & incorrect predictions
 true_LCDM = []
 true_MoG = []
 false_LCDM = []
