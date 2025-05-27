@@ -70,7 +70,7 @@ val_dataset = val_dataset.batch(16)
 def objective(trial):
     tf.keras.backend.clear_session()
 
-    # Hyperparameters to search
+    #Hyperparameters to search
     num_blocks = trial.suggest_int("num_blocks", 2, 5)
     K = trial.suggest_categorical("K", [3, 5, 7, 10])
     base_Fout = trial.suggest_categorical("base_Fout", [4, 8, 16])
@@ -79,7 +79,7 @@ def objective(trial):
     use_dropout = trial.suggest_categorical("use_dropout", [True, False])
     dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
 
-    # Build the model layers
+    #Layers
     layers = []
     Fout = base_Fout
     for i in range(num_blocks):
@@ -91,22 +91,19 @@ def objective(trial):
         layers.append(hp_layer.HealpyPool(p=1))
         Fout = max(2, Fout // 2)
 
-    # Final conv and classification
+    #Final conv and classification
     layers.append(hp_layer.HealpyChebyshev(K=K, Fout=1))
     layers.append(tf.keras.layers.Lambda(lambda x: tf.math.sigmoid(tf.reduce_mean(x, axis=1))))
 
-    # Build the model
     model = HealpyGCNN(nside=nside, indices=indices, layers=layers, n_neighbors=20)
     model.build(input_shape=(None, len(indices), 1))
 
-    # Compile
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
         loss='binary_crossentropy',
         metrics=[tf.keras.metrics.BinaryAccuracy()]
     )
 
-    # Train
     history = model.fit(
         train_dataset,
         epochs=100,
@@ -117,7 +114,7 @@ def objective(trial):
         ]
     )
     print("model training finished")
-    val_acc = max(history.history['val_binary_accuracy'])
+    val_acc = max(history.history["val_binary_accuracy"])
     return val_acc
 
 study = optuna.create_study(direction="maximize")
