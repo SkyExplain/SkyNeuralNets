@@ -9,10 +9,12 @@ from sklearn.model_selection import train_test_split
 
 tf.keras.backend.clear_session()  # clear any previous models
 
-data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/CMBFeatureNet/data/"
+data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # suppress TF warnings
+import tensorflow as tf
+print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
 print("Current working directory:", os.getcwd())
 
 def read_map(file_path):
@@ -26,7 +28,7 @@ def read_map(file_path):
         return np.concatenate(hdul[1].data['T'])
 
 # Read and visualize one map
-path_lcdm = "./simulated_maps/lcdm/"
+path_lcdm = "./simulated_maps/"
 map_temp_data = read_map(path_lcdm + 'cmb_map_0.fits')
 
 nside = hp.npix2nside(len(map_temp_data))
@@ -62,7 +64,7 @@ def map_to_image(hp_map, xsize=256):
     plt.close()
     return img
 
-path_feature = "./simulated_maps/feature/"
+path_feature = "./simulated_maps/"
 x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=100)  # 0: lcdm, 1:feature
 
 x_raw_new = np.array(x_raw).squeeze()
@@ -89,7 +91,7 @@ model = models.Sequential([
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 model.summary(110)
 
-history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_split=0.2)
+history = model.fit(X_train, y_train, epochs=1000, batch_size=32, validation_split=0.2)
 
 test_loss, test_acc = model.evaluate(X_test, y_test)
 print(f"Test accuracy: {test_acc:.4f}")
@@ -130,6 +132,8 @@ plt.yscale("log")
 plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
+plt.title("Model Accuracy")
+plt.savefig("/cosmodata/iocampo/SkyNeuralNets/plots/model_accuracy_CNN_2Dprojections.png")
 plt.show()
 
 plt.figure(figsize=(12, 8))
@@ -140,6 +144,8 @@ plt.yscale("log")
 plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
+plt.title("Model Loss")
+plt.savefig("/cosmodata/iocampo/SkyNeuralNets/plots/model_loss_CNN_2Dprojections.png")
 plt.show()
 
 # Performance: correct & incorrect predictions
