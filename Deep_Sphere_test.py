@@ -10,10 +10,12 @@ from sklearn.model_selection import train_test_split
 
 tf.keras.backend.clear_session()
 
-data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/CMBFeatureNet/data/"
+data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
+import tensorflow as tf
+print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
 print("Current working directory:", os.getcwd())
 
 def read_map(file_path):
@@ -27,7 +29,7 @@ def read_map(file_path):
         return np.concatenate(hdul[1].data['T'])
 
 # Read the data
-path_lcdm = "./simulated_maps/lcdm/"
+path_lcdm = "./simulated_maps/"
 map_temp_data = read_map(path_lcdm + 'cmb_map_0.fits')
 
 # Visualize the map
@@ -60,13 +62,13 @@ def read_all_maps(path_lcdm, path_feature, n_maps=100):
     maps = []
     labels = []
     
-    # LCDM maps
+    #LCDM maps
     for i in range(n_maps):
         map_lcdm = read_map(f"{path_lcdm}cmb_map_{i}.fits")
         maps.append(map_lcdm)
         labels.append(0)  # lcdm
     
-    # Feature maps
+    #Feature maps
     for i in range(n_maps):
         map_feature = read_map(f"{path_feature}cmb_map_feature_{i}.fits")
         maps.append(map_feature)
@@ -76,7 +78,7 @@ def read_all_maps(path_lcdm, path_feature, n_maps=100):
     labels = np.array(labels).astype(np.int32)
     return maps, labels
 
-path_feature = "./simulated_maps/feature/"
+path_feature = "./simulated_maps/"
 x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=100)  # 0: lcdm, 1: feature
 
 x_train, x_test, y_train, y_test = train_test_split(x_raw, y_raw, test_size=0.3, random_state=42)
@@ -136,6 +138,9 @@ plt.yscale("log")
 plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
+plt.title("Model Accuracy")
+plt.savefig("/cosmodata/iocampo/SkyNeuralNets/plots/model_accuracy_DS.png")
+plt.show()
 
 plt.figure(figsize=(12, 8))
 plt.plot(history.history["loss"], label="training")
@@ -145,6 +150,9 @@ plt.yscale("log")
 plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
+plt.title("Model Loss")
+plt.savefig("/cosmodata/iocampo/SkyNeuralNets/plots/model_loss_DS.png")
+plt.show()
 
 # Performance: correct & incorrect predictions
 true_LCDM = []
