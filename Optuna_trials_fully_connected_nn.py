@@ -9,10 +9,12 @@ import optuna
 from healpy import read_map
 tf.keras.backend.clear_session() #clear any previous models
 
-data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/CMBFeatureNet/data/"
+data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1' #disable GPU
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  #suppress TF warnings
+import tensorflow as tf
+print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
+# os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
 print("Current working directory:", os.getcwd())
 
 from astropy.io import fits
@@ -29,7 +31,7 @@ def read_map(file_path):
 
 
 #Read the data
-path_lcdm = "./simulated_maps/lcdm/"
+path_lcdm = "./simulated_maps/"
 map_temp_data = read_map(path_lcdm + 'cmb_map_0.fits')
 
 #Visualize the map
@@ -61,7 +63,7 @@ def read_all_maps(path_lcdm, path_feature, n_maps=100):
     #print(labels)
     return maps, labels
 
-path_feature = "./simulated_maps/feature/"
+path_feature = "./simulated_maps/"
 x_raw, y_raw = read_all_maps(path_lcdm, path_feature, n_maps=100) #0: lcdm, 1:feature
 
 maps_model = np.atleast_2d(x_raw)
@@ -105,7 +107,7 @@ def objective(trial):
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=100,
+        epochs=500,
         batch_size=32,
         verbose=0,
         callbacks=[tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)]
