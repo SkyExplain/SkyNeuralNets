@@ -11,7 +11,6 @@ tf.keras.backend.clear_session()  # clear any previous models
 
 data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
-import tensorflow as tf
 print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # disable GPU
 # os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # suppress TF warnings
