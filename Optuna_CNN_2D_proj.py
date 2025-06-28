@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from sklearn.model_selection import train_test_split
 
+data_directory = "/cosmodata/iocampo/SkySimulation/data/"
+os.chdir(data_directory)
+
 def read_map(file_path):
     """
     Reads a Healpy map from a FITS file and flattens the data.
