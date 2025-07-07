@@ -6,8 +6,15 @@ import os
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from sklearn.model_selection import train_test_split
+from tensorflow.keras.optimizers import SGD
 
-tf.keras.backend.clear_session()  # clear any previous models
+tf.keras.backend.clear_session()  #clear any previous models
+
+os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=0"
+os.environ["TF_DISABLE_XLA"] = "1"
+
+print("GPU devices:", tf.config.list_physical_devices('GPU'))
+print("Is GPU available:", tf.test.is_gpu_available())
 
 data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
@@ -87,7 +94,7 @@ model = models.Sequential([
     layers.Dense(1, activation='sigmoid')
 ])
 
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=SGD(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 model.summary(110)
 
 history = model.fit(X_train, y_train, epochs=1000, batch_size=32, validation_split=0.2)
