@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from sklearn.model_selection import train_test_split
 
+os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=0"
+os.environ["TF_DISABLE_XLA"] = "1"
+
 data_directory = "/cosmodata/iocampo/SkySimulation/data/"
 os.chdir(data_directory)
 
