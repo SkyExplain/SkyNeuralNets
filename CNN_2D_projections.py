@@ -5,6 +5,9 @@ from tensorflow.keras import layers, models, regularizers
 import os
 import matplotlib.pyplot as plt
 from healpy import read_map
+import time
+
+start = time.time()   #mark start
 
 tf.keras.backend.clear_session()  #clear any previous models
 
@@ -152,7 +155,7 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
 plt.title("Model Accuracy")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Accuracy_CNN_2Dprojections.png")
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Accuracy_CNN_2Dprojections_m2.png")
 plt.show()
 
 plt.figure(figsize=(12, 8))
@@ -164,7 +167,7 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.title("Model Loss")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Loss_CNN_2Dprojections.png")
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Loss_CNN_2Dprojections_m2.png")
 plt.show()
 
 #Check the class balance, do we have a 50/50 split?
@@ -220,5 +223,9 @@ cm_prob = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 disp = ConfusionMatrixDisplay(confusion_matrix=cm_prob, display_labels=["ΛCDM", "Feature"])
 disp.plot(cmap="Blues", values_format='.3f')
 plt.title(f"Confusion Matrix (Accuracy={acc:.3f})")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/confusion_matrix.png", dpi=300)
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/confusion_matrix_m2.png", dpi=300)
 plt.show()
+
+end = time.time()     # mark end
+
+print(f"Elapsed time: {end - start:.2f} seconds")
