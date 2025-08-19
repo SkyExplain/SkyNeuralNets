@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=0"
 os.environ["TF_DISABLE_XLA"] = "1"
 
-data_directory = "/cosmodata/iocampo/SkySimulation/data/"
+data_directory = "/cosmodata/iocampo/SkySimulation/data/simulated_data/"
 os.chdir(data_directory)
 
 def read_map(file_path):

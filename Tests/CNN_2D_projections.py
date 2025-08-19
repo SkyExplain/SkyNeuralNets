@@ -9,6 +9,8 @@ import time
 
 start = time.time()   #mark start
 
+tag = "CNN_2D_projections_m2"
+
 tf.keras.backend.clear_session()  #clear any previous models
 
 os.environ["TF_XLA_FLAGS"] = "--tf_xla_auto_jit=0"
@@ -17,7 +19,7 @@ os.environ["TF_DISABLE_XLA"] = "1"
 print("GPU devices:", tf.config.list_physical_devices('GPU'))
 print("Is GPU available:", tf.test.is_gpu_available())
 
-data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkySimulation/data/"
+data_directory = "/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkySimulation/data/simulated_data/"
 os.chdir(data_directory)
 print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  #disable GPU
@@ -47,7 +49,7 @@ nside = hp.npix2nside(len(map_temp_data))
 print(f"NSIDE: {nside}")
 
 
-def read_all_maps(path_lcdm, path_feature, n_maps=100):
+def read_all_maps(path_lcdm, path_feature, n_maps=225):
     maps = []
     labels = []
     
@@ -143,7 +145,7 @@ cb = [
 
 history = model.fit(X_train, y_train, epochs=500, batch_size=32, validation_data=(X_val, y_val), callbacks=cb)
 
-test_loss, test_acc = model.evaluate(X_test, y_test)
+test_loss, test_acc, test_auc = model.evaluate(X_test, y_test)
 print(f"Test accuracy: {test_acc:.4f}")
 
 plt.figure(figsize=(12, 8))
@@ -155,7 +157,7 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")
 plt.title("Model Accuracy")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Accuracy_CNN_2Dprojections_m2.png")
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Accuracy_%s.png" % tag)
 plt.show()
 
 plt.figure(figsize=(12, 8))
@@ -167,11 +169,14 @@ plt.legend()
 plt.xlabel("Epoch")
 plt.ylabel("Loss")
 plt.title("Model Loss")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Loss_CNN_2Dprojections_m2.png")
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/Loss_%s.png" % tag)
 plt.show()
 
 #Check the class balance, do we have a 50/50 split?
 print("class balance test:", (y_test==1).mean())
+
+# Get model probabilities
+probs = model.predict(X_test, batch_size=64).ravel()
 
 from sklearn.metrics import roc_curve, auc, confusion_matrix, accuracy_score, ConfusionMatrixDisplay
 
@@ -223,7 +228,7 @@ cm_prob = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 disp = ConfusionMatrixDisplay(confusion_matrix=cm_prob, display_labels=["ΛCDM", "Feature"])
 disp.plot(cmap="Blues", values_format='.3f')
 plt.title(f"Confusion Matrix (Accuracy={acc:.3f})")
-plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/confusion_matrix_m2.png", dpi=300)
+plt.savefig("/mnt/lustre/scratch/nlsas/home/csic/eoy/ioj/SkyNeuralNets/plots/ConfMat_%s.png" % tag, dpi=300)
 plt.show()
 
 end = time.time()     # mark end
