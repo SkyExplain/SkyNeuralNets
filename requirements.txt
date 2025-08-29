@@ -7,3 +7,4 @@ healpy
 astropy
 keras
 pandas
+scikit-learn
