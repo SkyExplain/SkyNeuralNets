@@ -5,7 +5,7 @@ setup(
     version="0.1.0",
     author="Indira Ocampo",
     author_email="indira.ocampo@csic.es",
-    description="A Python package for model selection using NNs.",
+    description="A Python package for model selection using CNNs.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/IndiraOcampo/SkyNeuralNets",
@@ -18,5 +18,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
 )
