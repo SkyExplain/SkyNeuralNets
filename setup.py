@@ -11,7 +11,7 @@ setup(
     url="https://github.com/IndiraOcampo/SkyNeuralNets",
     packages=find_packages(),
     install_requires=[
-        "numpy", "scipy", "matplotlib", "healpy", "tensorflow", "astropy", "scikit-learn" #Dependencies
+        "numpy", "scipy", "matplotlib", "healpy", "astropy", "scikit-learn" #Dependencies
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -20,3 +20,7 @@ setup(
     ],
     python_requires=">=3.10",
 )
+
+extras_require={
+    "gpu": ["tensorflow"],  # if you want to use GPU support
+}
