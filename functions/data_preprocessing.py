@@ -20,8 +20,8 @@ def read_map(file_path):
         if len(hdul) > 1 and hasattr(hdul[1], 'columns'):
             print(hdul[1].columns)
         return np.concatenate(hdul[1].data['T'])
-    
-def read_all_maps(path_lcdm, path_feature, n_maps=100):
+
+def read_all_maps(path_lcdm, path_feature, n_maps=100, polarization=False):
     """Reads all maps from specified directories and returns them as numpy arrays.
     Args:
         path_lcdm (str): Path to the directory containing LCDM maps.
@@ -36,18 +36,30 @@ def read_all_maps(path_lcdm, path_feature, n_maps=100):
     
     #LCDM maps
     for i in range(n_maps):
-        map_lcdm = read_map(f"{path_lcdm}cmb_map_{i}.fits")
+        map_lcdm = read_map(f"{path_lcdm}cmb_pol_map_T_{i}.fits")
         maps.append(map_lcdm)
         labels.append(0)  #lcdm labeled 0
     
     #Feature maps
     for i in range(n_maps):
-        map_feature = read_map(f"{path_feature}cmb_map_feature_{i}.fits")
+        map_feature = read_map(f"{path_feature}cmb_pol_map_T_feature_{i}.fits")
         maps.append(map_feature)
         labels.append(1)  #feature labeled 1
     
     maps = np.array(maps).astype(np.float32)[..., None]  #channel dimension
     labels = np.array(labels).astype(np.int32)
+
+    if polarization:
+        maps_pol = []
+        for i in range(n_maps):
+            map_lcdm_Q = read_map(f"{path_lcdm}cmb_pol_map_Q_{i}.fits")
+            map_lcdm_U = read_map(f"{path_lcdm}cmb_pol_map_U_{i}.fits")
+            map_feature_Q = read_map(f"{path_feature}cmb_pol_map_Q_feature_{i}.fits")
+            map_feature_U = read_map(f"{path_feature}cmb_pol_map_U_feature_{i}.fits")
+            maps_pol.append(np.stack([map_lcdm, map_lcdm_Q, map_lcdm_U], axis=-1))
+            maps_pol.append(np.stack([map_feature, map_feature_Q, map_feature_U], axis=-1))
+        maps = np.array(maps_pol).astype(np.float32)
+        
     return maps, labels
 
 def map_to_image(hp_map, xsize=256):
