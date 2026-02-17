@@ -2,7 +2,7 @@ import numpy as np
 import healpy as hp
 from astropy.io import fits
 from matplotlib import pyplot as plt
-from sklearn.decomposition import PCA
+from sklearn.model_selection import StratifiedGroupKFold
 
 
 def read_map(file_path: str) -> np.ndarray:
@@ -82,14 +82,14 @@ def read_all_maps(
     return maps_pol, labels
 
 
-def map_to_image(hp_map: np.ndarray, xsize: int = 256) -> np.ndarray:
+def map_to_image(hp_map: np.ndarray, xsize: int = 1280) -> np.ndarray:
     """
     Converts a Healpy map (1D Npix) to a 2D image using a cartesian projection.
 
     Returns:
         2D projected image.
     """
-    hp_map = np.asarray(hp_map, dtype=np.float64)
+    hp_map = np.asarray(hp_map, dtype=np.float32)
     # validate
     _ = hp.get_nside(hp_map)
 
@@ -151,71 +151,60 @@ def compare_maps_patches(
                 title="Difference patch", cmap="coolwarm", sub=(1, 3, 3))
     plt.tight_layout()
 
-
-def z_score_norm(X_train: np.ndarray, X_test: np.ndarray, X_val: np.ndarray):
+def zscore_per_map(X, eps=1e-6):
     """
-    Compute μ, σ on TRAIN ONLY; apply to all splits.
-
-    Returns:
-        X_train_scaled, X_test_scaled, X_val_scaled, (mu, std)
+    X: (N,H,W) or (N,H,W,C)
+    returns same shape
     """
-    mu = X_train.mean(dtype=np.float64)
-    std = X_train.std(dtype=np.float64)
-    std = std if std > 0 else 1.0
+    X = X.astype(np.float32)
+    axes = (1, 2)  #normalize per map over spatial pixels
+    mean = np.mean(X, axis=axes, keepdims=True)
+    std  = np.std(X, axis=axes, keepdims=True)
+    return (X - mean) / (std + eps)
 
-    def _scale(Z):
-        return ((Z - mu) / std).astype(np.float32)
+def zscore_global_fit(X_train, eps=1e-6):
+    X_train = X_train.astype(np.float32)
+    mu = np.mean(X_train)
+    sig = np.std(X_train)
+    return mu, sig + eps
 
-    return _scale(X_train), _scale(X_test), _scale(X_val), (float(mu), float(std))
+def zscore_global_apply(X, mu, sig):
+    X = X.astype(np.float32)
+    return (X - mu) / sig
 
-def PCA_norm(X_train, X_val, X_test, y_train, n_components=100, return_details=False):
-    #---- 1. Flatten data ----
-    orig_shape = X_train.shape[1:]   # e.g. (H, W, 1) or (H, W)
-    X_train_flat = X_train.reshape(X_train.shape[0], -1)
-    X_val_flat   = X_val.reshape(X_val.shape[0], -1)
-    X_test_flat  = X_test.reshape(X_test.shape[0], -1)
+def ensure_channel_dim(X):
+    """
+    If X is (N,H,W) -> (N,H,W,1)
+    If X is (N,H,W,C) -> unchanged
+    """
+    if X.ndim == 3:
+        return X[..., np.newaxis]
+    if X.ndim == 4:
+        return X
+    raise ValueError(f"Unexpected X.ndim={X.ndim}, expected 3 or 4.")
 
-    #---- 2. Fit PCA on noise (Class 0 in TRAIN only) ----
-    noise_indices = (y_train == 0)
-    X_noise_flat  = X_train_flat[noise_indices]
+def zscore_norm(X_train, X_val, X_test, mode="per_map"):
+    #1) ensure channel dim
+    X_train = ensure_channel_dim(X_train)
+    X_val   = ensure_channel_dim(X_val)
+    X_test  = ensure_channel_dim(X_test)
 
-    if X_noise_flat.shape[0] == 0:
-        raise RuntimeError("No Class 0 maps in y_train, cannot fit PCA")
+    #2) normalize
+    if mode == "per_map":
+        X_train_n = zscore_per_map(X_train)
+        X_val_n   = zscore_per_map(X_val)
+        X_test_n  = zscore_per_map(X_test)
+        norm_info = {"mode": "per_map"}
+    elif mode == "global":
+        mu, sig = zscore_global_fit(X_train)
+        X_train_n = zscore_global_apply(X_train, mu, sig)
+        X_val_n   = zscore_global_apply(X_val, mu, sig)
+        X_test_n  = zscore_global_apply(X_test, mu, sig)
+        norm_info = {"mode": "global", "mu": float(mu), "sig": float(sig)}
+    else:
+        raise ValueError("mode must be 'per_map' or 'global'")
 
-    print("Fitting PCA on noise maps...")
-    pca = PCA(n_components=n_components, whiten=False)
-    pca.fit(X_noise_flat)
-    print(f"Explained variance: {np.sum(pca.explained_variance_ratio_):.4f}")
-
-    #---- 3. Subtract noise from all datasets ----
-    def subtract_noise(X_flat, pca_obj):
-        noise_part  = pca_obj.inverse_transform(pca_obj.transform(X_flat))
-        signal_part = X_flat - noise_part
-        return noise_part, signal_part
-
-    X_train_noise_flat, X_train_signal_flat = subtract_noise(X_train_flat, pca)
-    X_val_noise_flat,   X_val_signal_flat   = subtract_noise(X_val_flat,   pca)
-    X_test_noise_flat,  X_test_signal_flat  = subtract_noise(X_test_flat,  pca)
-
-    #---- 4. Reshape back (this is what you use for the CNN) ----
-    X_train_pca = X_train_signal_flat.reshape(X_train.shape).astype(np.float32)
-    X_val_pca   = X_val_signal_flat.reshape(X_val.shape).astype(np.float32)
-    X_test_pca  = X_test_signal_flat.reshape(X_test.shape).astype(np.float32)
-
-    print("PCA noise subtraction done.")
-
-    if not return_details:
-        return X_train_pca, X_val_pca, X_test_pca
-
-    details = dict(
-        orig_shape=orig_shape,
-        pca=pca,
-        X_train_flat=X_train_flat, X_val_flat=X_val_flat, X_test_flat=X_test_flat,
-        X_train_noise_flat=X_train_noise_flat, X_val_noise_flat=X_val_noise_flat, X_test_noise_flat=X_test_noise_flat,
-        X_train_signal_flat=X_train_signal_flat, X_val_signal_flat=X_val_signal_flat, X_test_signal_flat=X_test_signal_flat,
-        explained_variance_ratio=pca.explained_variance_ratio_,
-    )
-    return X_train_pca, X_val_pca, X_test_pca, details
+    return X_train_n, X_val_n, X_test_n, norm_info
 
 def mollweide_from_cartesian(ax, m, title, cmap="RdBu_r", vmin=None, vmax=None):
     # m is (H,W) with lat in [-pi/2, pi/2], lon in [-pi, pi]
@@ -233,3 +222,60 @@ def mollweide_from_cartesian(ax, m, title, cmap="RdBu_r", vmin=None, vmax=None):
 
     ax.set_frame_on(False)         
     return im
+
+def train_val_test_split_strat(X, y, groups, test_size=0.2, val_size=0.2, random_state=12345):
+    """
+    Splits data into Train, Validation, and Test sets while preserving 
+    stratification and ensuring groups are not split across sets.
+    
+    Args:
+        X (np.ndarray): The input features/images.
+        y (np.ndarray): The target labels for stratification.
+        groups (np.ndarray): The group identifiers to prevent leakage.
+        test_size (float): Proportion of total data for the test set.
+        val_size (float): Proportion of the *remaining* data for the validation set.
+        random_state (int): Seed for reproducibility.
+        
+    Returns:
+        tuple: (X_train, y_train), (X_val, y_val), (X_test, y_test)
+    """
+    indices = np.arange(len(y))
+    
+    #Extract Test Set
+    #n_splits is derived from test_size (e.g., 0.2 -> 5 splits)
+    test_n_splits = int(1 / test_size)
+    sgkf_test = StratifiedGroupKFold(n_splits=test_n_splits, shuffle=True, random_state=random_state)
+    trainval_idx, test_idx = next(sgkf_test.split(indices, y, groups=groups))
+
+    #Extract Validation Set from the remainder
+    val_n_splits = int(1 / val_size)
+    sgkf_val = StratifiedGroupKFold(n_splits=val_n_splits, shuffle=True, random_state=random_state)
+    
+    #Slice the training/validation pool
+    idx_tv = indices[trainval_idx]
+    y_tv = y[trainval_idx]
+    g_tv = groups[trainval_idx]
+    
+    train_rel, val_rel = next(sgkf_val.split(idx_tv, y_tv, groups=g_tv))
+    
+    #Map relative indices back to absolute indices
+    train_idx = idx_tv[train_rel]
+    val_idx = idx_tv[val_rel]
+
+    #Final Shuffle
+    rng = np.random.RandomState(random_state)
+    train_idx = rng.permutation(train_idx)
+    val_idx = rng.permutation(val_idx)
+    test_idx = rng.permutation(test_idx)
+
+    return (
+        (X[train_idx], y[train_idx]),
+        (X[val_idx], y[val_idx]),
+        (X[test_idx], y[test_idx])
+    )
+
+def per_map_standardize(X):
+    mu = X.mean(axis=(1,2,3), keepdims=True)
+    sd = X.std(axis=(1,2,3), keepdims=True) + 1e-8
+    return (X - mu) / sd
+
