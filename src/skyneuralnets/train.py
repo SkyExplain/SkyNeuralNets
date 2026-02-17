@@ -1,7 +1,58 @@
 from __future__ import annotations
 from typing import Optional
+import tensorflow as tf
 
-def train_model(
+def compile_mpl_model(model, learning_rate=1e-3):
+    """
+    Configures the model's solver and metrics.
+    """
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    metrics = [tf.keras.metrics.AUC(name="auc", from_logits=True)]
+    
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    return model
+
+def train_mpl_model(model, X_train, y_train, validation_data, 
+                 epochs=2000, batch_size=32, patience=100):
+    """
+    Executes the training loop with EarlyStopping.
+    """
+    callbacks = [
+        tf.keras.callbacks.EarlyStopping(
+            monitor="val_auc",
+            patience=patience,
+            restore_best_weights=True,
+            mode="max"
+        ),
+    ]
+
+    history = model.fit(
+        X_train, y_train,
+        validation_data=validation_data,
+        batch_size=batch_size,
+        epochs=epochs,
+        shuffle=True,
+        callbacks=callbacks,
+        verbose=1
+    )
+    return history
+
+def compile_cnn_model(model, learning_rate: float = 1e-3, metrics: list = None):
+    """
+    Configures the CNN with an optimizer, loss, and metrics.
+    """
+    if metrics is None:
+        metrics = [tf.keras.metrics.AUC(name="auc", from_logits=True)]
+        
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    # Using from_logits=True as it's generally more numerically stable
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+    return model
+
+def train_cnn_model(
     model,
     X_train,
     y_train,
@@ -17,22 +68,23 @@ def train_model(
     verbose: int = 1,
 ):
     """
-    Train a compiled Keras model with sensible defaults and your callback setup.
+    Handles the fit process with EarlyStopping and ReduceLROnPlateau.
     """
-    import tensorflow as tf
+    # Logic to determine if we want to maximize (AUC/Acc) or minimize (Loss)
+    mode = "max" if any(x in monitor.lower() for x in ["auc", "acc", "accuracy"]) else "min"
 
     callbacks = [
         tf.keras.callbacks.EarlyStopping(
             monitor=monitor,
             patience=patience_es,
-            mode="max" if "auc" in monitor or "acc" in monitor else "min",
+            mode=mode,
             restore_best_weights=True,
         ),
         tf.keras.callbacks.ReduceLROnPlateau(
             monitor=monitor,
             factor=factor_rlrop,
             patience=patience_rlrop,
-            mode="max" if "auc" in monitor or "acc" in monitor else "min",
+            mode=mode,
             min_lr=min_lr,
         ),
     ]
@@ -40,10 +92,11 @@ def train_model(
     history = model.fit(
         X_train,
         y_train,
+        validation_data=(X_val, y_val),
         epochs=epochs,
         batch_size=batch_size,
-        validation_data=(X_val, y_val),
         callbacks=callbacks,
+        shuffle=True,
         verbose=verbose,
     )
     return history
