@@ -75,3 +75,33 @@ def build_cnn_classifier(
     opt = tf.keras.optimizers.Adam(learning_rate=learning_rate, clipnorm=clipnorm)
     model.compile(optimizer=opt, loss="binary_crossentropy", metrics=metrics)
     return model
+
+def build_mlp_model(input_shape, k, W, b, hidden_units=64):
+    """
+    Constructs the model architecture with frozen PCA weights.
+    
+    Args:
+        input_shape (tuple): Shape of the input data (e.g., (H, W, C)).
+        k (int): Number of principal components.
+        W (np.ndarray): PCA components (weights).
+        b (np.ndarray): PCA bias (mean projection).
+        hidden_units (int): Neurons in the nonlinear head.
+    """
+    inp = layers.Input(shape=input_shape, name="input_layer")
+    x = layers.Flatten()(inp)
+
+    # PCA Projection Layer
+    proj = layers.Dense(k, activation=None, use_bias=True, name="pca_proj")
+    z = proj(x)
+    
+    # Inject pre-calculated weights and freeze
+    proj.set_weights([W, b])
+    proj.trainable = False
+
+    # Nonlinear Head
+    h = layers.ReLU()(z)
+    h = layers.Dense(hidden_units, activation="relu")(h)
+    out = layers.Dense(1, activation=None, name="logits")(h)
+
+    model = models.Model(inputs=inp, outputs=out)
+    return model
