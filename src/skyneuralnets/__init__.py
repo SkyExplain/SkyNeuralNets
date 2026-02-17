@@ -8,17 +8,22 @@ from .preprocessing import (
     map_to_image,
     compare_maps_spherical,
     compare_maps_patches,
-    z_score_norm,
-    PCA_norm,
+    zscore_norm,
     mollweide_from_cartesian,
+    train_val_test_split_strat,
+    per_map_standardize,
 )
 
-from .cnn import (
+from .architectures import (
     build_cnn_classifier,
+    build_mlp_model,
 )
 
 from .train import (
-    train_model,
+    compile_mpl_model,
+    train_mpl_model,
+    compile_cnn_model,
+    train_cnn_model,
 )
 
 from .calibration import (
@@ -38,13 +43,18 @@ __all__ = [
     "map_to_image",
     "compare_maps_spherical",
     "compare_maps_patches",
-    "z_score_norm",
-    "PCA_norm",
+    "zscore_norm",
     "mollweide_from_cartesian",
+    "train_val_test_split_strat",
+    "per_map_standardize",
     # model
     "build_cnn_classifier",
+    "build_mlp_model",
     # train
-    "train_model",
+    "compile_mpl_model",
+    "train_mpl_model",
+    "compile_cnn_model",
+    "train_cnn_model",
     # calibration
     "optimal_threshold_from_roc",
     "apply_threshold",
