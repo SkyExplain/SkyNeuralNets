@@ -21,7 +21,7 @@ def train_mpl_model(model, X_train, y_train, validation_data,
     """
     callbacks = [
         tf.keras.callbacks.EarlyStopping(
-            monitor="auc",
+            monitor="val_auc",
             patience=patience,
             restore_best_weights=True,
             mode="max"
