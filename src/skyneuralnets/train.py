@@ -1,4 +1,5 @@
 from __future__ import annotations
+from tabnanny import verbose
 from typing import Optional
 import tensorflow as tf
 
@@ -14,13 +15,13 @@ def compile_mpl_model(model, learning_rate=1e-3):
     return model
 
 def train_mpl_model(model, X_train, y_train, validation_data, 
-                 epochs=2000, batch_size=32, patience=100):
+                 epochs=2000, batch_size=32, patience=100, verbose=1):
     """
     Executes the training loop with EarlyStopping.
     """
     callbacks = [
         tf.keras.callbacks.EarlyStopping(
-            monitor="val_auc",
+            monitor="auc",
             patience=patience,
             restore_best_weights=True,
             mode="max"
@@ -34,7 +35,7 @@ def train_mpl_model(model, X_train, y_train, validation_data,
         epochs=epochs,
         shuffle=True,
         callbacks=callbacks,
-        verbose=1
+        verbose=verbose,
     )
     return history
 
