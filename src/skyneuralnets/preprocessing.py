@@ -27,7 +27,7 @@ def read_all_maps(
     path_lcdm: str,
     path_feature: str,
     n_maps: int = 100,
-    polarization: bool = False,
+    polarization: str = None,  # Options: None, 'Q', or 'U'
     file_prefix: str = "cmb_pol_map",
 ) -> tuple[np.ndarray, np.ndarray]:
     """
@@ -47,39 +47,30 @@ def read_all_maps(
     """
     maps = []
     labels = []
+    
+    # Determine which component to read
+    # If polarization is provided (Q or U), use it; otherwise default to T
+    comp = polarization.upper() if polarization else "T"
+    
+    configs = [
+        (path_lcdm, "", 0),           # (path, suffix_part, label)
+        (path_feature, "_feature", 1)
+    ]
 
-    # Temperature maps
-    for i in range(n_maps):
-        m = read_map(f"{path_lcdm}{file_prefix}_T_{i}.fits")
-        maps.append(m)
-        labels.append(0)
+    for path, suffix, label in configs:
+        for i in range(n_maps):
+            # Construct filename: e.g., cmb_pol_map_Q_feature_0.fits
+            filename = f"{path}{file_prefix}_{comp}{suffix}_{i}.fits"
+            
+            m = read_map(filename)
+            maps.append(m)
+            labels.append(label)
 
-    for i in range(n_maps):
-        m = read_map(f"{path_feature}{file_prefix}_T_feature_{i}.fits")
-        maps.append(m)
-        labels.append(1)
-
+    # Convert to arrays and add channel dimension [N, H, W, 1]
+    maps = np.array(maps).astype(np.float32)[..., None]
     labels = np.array(labels).astype(np.int32)
 
-    if not polarization:
-        maps = np.array(maps).astype(np.float32)[..., None]  # add channel dim
-        return maps, labels
-
-    # Polarization: stack [T, Q, U] as channels
-    maps_pol = []
-    for i in range(n_maps):
-        T_l = read_map(f"{path_lcdm}{file_prefix}_T_{i}.fits")
-        Q_l = read_map(f"{path_lcdm}{file_prefix}_Q_{i}.fits")
-        U_l = read_map(f"{path_lcdm}{file_prefix}_U_{i}.fits")
-        maps_pol.append(np.stack([T_l, Q_l, U_l], axis=-1))
-
-        T_f = read_map(f"{path_feature}{file_prefix}_T_feature_{i}.fits")
-        Q_f = read_map(f"{path_feature}{file_prefix}_Q_feature_{i}.fits")
-        U_f = read_map(f"{path_feature}{file_prefix}_U_feature_{i}.fits")
-        maps_pol.append(np.stack([T_f, Q_f, U_f], axis=-1))
-
-    maps_pol = np.array(maps_pol).astype(np.float32)
-    return maps_pol, labels
+    return maps, labels
 
 
 def map_to_image(hp_map: np.ndarray, xsize: int = 1280) -> np.ndarray:
