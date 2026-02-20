@@ -76,7 +76,7 @@ def build_cnn_classifier(
     model.compile(optimizer=opt, loss="binary_crossentropy", metrics=metrics)
     return model
 
-def build_mlp_model(input_shape, k, W, b, hidden_units=64):
+def build_mlp_model(input_shape, k, W, b, hidden_units=64, dropout_rate=0.):
     """
     Constructs the model architecture with frozen PCA weights.
     
@@ -86,6 +86,7 @@ def build_mlp_model(input_shape, k, W, b, hidden_units=64):
         W (np.ndarray): PCA components (weights).
         b (np.ndarray): PCA bias (mean projection).
         hidden_units (int): Neurons in the nonlinear head.
+        dropout_rate (float): Dropout rate for the nonlinear head.
     """
     inp = layers.Input(shape=input_shape, name="input_layer")
     x = layers.Flatten()(inp)
@@ -101,6 +102,10 @@ def build_mlp_model(input_shape, k, W, b, hidden_units=64):
     # Nonlinear Head
     h = layers.ReLU()(z)
     h = layers.Dense(hidden_units, activation="relu")(h)
+
+    if dropout_rate > 0:
+        h = layers.Dropout(dropout_rate)(h)
+    
     out = layers.Dense(1, activation=None, name="logits")(h)
 
     model = models.Model(inputs=inp, outputs=out)
