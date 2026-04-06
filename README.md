@@ -51,9 +51,8 @@ pip install -e .
 ---
 
 ## 🚀 Quick Start
-
-See the `examples/` directory for ready-to-run scripts.  
-Also see **[Sandbox](https://github.com/skyexplain/Sandbox)** for tutorials and more examples.
+  
+See **[Sandbox](https://github.com/skyexplain/Sandbox)** for tutorials and examples.
 
 ---
 
