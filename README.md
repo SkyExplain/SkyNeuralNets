@@ -4,7 +4,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-red)](https://arxiv.org/abs/XXXX.XXXXX)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19445671.svg)](https://doi.org/10.5281/zenodo.19445671))
+[![arXiv](https://img.shields.io/badge/arXiv-2604.05290-red)](https://arxiv.org/abs/2604.05290)
 
 ---
 
@@ -73,12 +74,11 @@ This repository is part of a three-package ecosystem:
 If you use **SkyNeuralNets** in your research, please cite:
 
 ```bibtex
-@article{Ocampo2026,
+@article{ocampo2026explaining,
   author        = {Indira Ocampo and Guadalupe Cañas-Herrera},
   title         = {Explaining Neural Networks on the Sky: Machine Learning Interpretability for CMB Maps},
-  journal       = {JCAP},
   year          = {2026},
-  eprint        = {XXXX.XXXXX},
+  eprint        = {2604.05290},
   archivePrefix = {arXiv}
 }
 ```
