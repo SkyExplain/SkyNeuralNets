@@ -37,11 +37,14 @@ def confusion_matrix_plot(
 
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(labels))
     fig, ax = plt.subplots(figsize=figsize)
+    
+    #Disable default colorbar
     disp.plot(
         cmap=cmap,
         values_format=values_format,
         ax=ax,
-        colorbar=True
+        colorbar=False, 
+        im_kw={"vmin": 0.0, "vmax": 1.0} 
     )
 
     ax.set_xlabel("Predicted label", fontsize=fontsize)
@@ -51,16 +54,16 @@ def confusion_matrix_plot(
     for text in ax.texts:
         text.set_fontsize(fontsize)
 
-    cbar = ax.figure.axes[-1]
-    cbar.tick_params(labelsize=fontsize)
+    #Build colorbar manually
+    cbar = fig.colorbar(disp.im_, ax=ax, ticks=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    cbar.ax.tick_params(labelsize=fontsize)
 
-    pos = cbar.get_position()
-
-    cbar.set_position([
-        pos.x0,         # keep x position
-        pos.y0 + 0.01,  # slightly raise it
+    pos = cbar.ax.get_position()
+    cbar.ax.set_position([
+        pos.x0,         
+        pos.y0 + 0.01,  
         pos.width,      
-        pos.height * 0.97   # <-- shrink to 70% height
+        pos.height * 0.97   
     ])
     
     if savepath is not None:
