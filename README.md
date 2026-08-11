@@ -15,7 +15,7 @@
 
 This package is designed to work with simulated data from [**SkySimulation**](https://github.com/skyexplain/SkySimulation) and feeds into the interpretability analysis in [**SkyInterpret**](https://github.com/skyexplain/SkyInterpret).
 
-This code was developed as part of the analysis pipeline for [*Explaining Neural Networks on the Sky: Machine Learning Interpretability for CMB Maps*](https://arxiv.org/abs/XXXX.XXXXX).
+This code was developed as part of the analysis pipeline for [*Explaining Neural Networks on the Sky: Machine Learning Interpretability for CMB Maps*](https://arxiv.org/abs/2604.05290).
 
 ---
 
